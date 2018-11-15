@@ -161,7 +161,7 @@ class Login extends React.Component {
         const { classes } = this.props;
         
         return(
-            <div style={{textAlign: 'center'}}>
+            <div style={{width: '100%'}}>
               <Grid item  xs={10} sm={8} md={4} lg={4} style={{textAlign: 'center', margin: 'auto', display: 'flex'}}>
                 <Card>
                     <CardHeader title="Login"/>

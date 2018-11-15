@@ -9,8 +9,11 @@ import Modal from '@material-ui/core/Modal';
 import Stepper from '@material-ui/core/Stepper';
 import Step from '@material-ui/core/Step';
 import StepButton from '@material-ui/core/StepButton';
+import StepLabel from '@material-ui/core/StepLabel';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
+import Question from './Question.js';
+import NotificationDetails from './NotificationDetails.js';
 
 const styles = theme => ({
   paper: {
@@ -46,11 +49,20 @@ switch (step) {
 class ConfigModal extends React.Component {
   state={configName: this.props.configName,
          activeStep: 0,
-         completed: {}}
+         numQuestions: 1,
+         completed: {},
+         validateForm: false,
+         questionConfigError: false,
+         notificationConfigError: false,
+         triggerAnswerType: ''}
 
   handleClose = () => {
     this.props.onClose();
   };
+
+  componentDidMount = () => {
+    this.addQuestion('');
+  }
 
   componentWillReceiveProps = (nextProps) => {
       this.setState({configName: nextProps.configName})
@@ -101,6 +113,7 @@ class ConfigModal extends React.Component {
     this.setState({
       activeStep: 0,
       completed: {},
+      questionList: []
     });
   };
 
@@ -116,10 +129,65 @@ class ConfigModal extends React.Component {
     return this.completedSteps() === this.totalSteps();
   }
 
+  /*addQuestion = (type) => {
+    console.log(type)
+    let temp = Object.assign(this.state.questionList);
+    let count = temp.length;
+    let index = count + 1;
+    temp.push(<Question addQuestion={this.addQuestion} validateForm={this.state.validateForm} validationResponse={this.handleValidationResponse} index={index} triggeredByAnswerType={type}/>)
+    this.setState({questionList: temp})
+  }*/
+
+  addQuestion = (type) => {
+    let temp = this.state.numQuestions
+    temp += 1
+    this.setState({numQuestions: temp, triggerAnswerType: type})
+  }
+
+  creatQuestions = (num) => {
+    var questions = [];
+    for(let i = 1; i < num; i++){
+        questions.push(<Question addQuestion={this.addQuestion} validateForm={this.state.validateForm} validationResponse={this.handleQuestionsValidationResponse} index={i} triggeredByAnswerType={this.state.triggerAnswerType}/>);
+    }
+    return questions;
+  }
+
+  save = () => {
+    this.setState({validateForm: true})
+  }
+
+  handleQuestionsValidationResponse = (response) => {
+    console.log(response)
+
+    if(response === false){
+      this.setState({questionConfigError: true})
+    }else{
+      let temp = Object.assign(this.state.completed)
+      temp[0] = true
+      this.setState({completed: temp, questionConfigError: false})
+    }
+
+    this.setState({validateForm: false})
+  }
+  handleNotificationsValidationResponse = (response) => {
+    console.log(response)
+
+    
+    if(response === false){
+      this.setState({notificationConfigError: true})
+    }else{
+      let temp = Object.assign(this.state.completed)
+      temp[1] = true
+      this.setState({completed: temp, notificationConfigError: false})
+    }
+
+    this.setState({validateForm: false})
+  }
+
   render() {
     const { classes } = this.props;
     const steps = getSteps();
-    const { activeStep } = this.state;
+    const { activeStep, questionList } = this.state;    
 
     return (
       <div>
@@ -133,36 +201,59 @@ class ConfigModal extends React.Component {
             <Card style={{textAlign: 'center', backgroundColor: 'white', width: '75%', height: '75%'}}>
                 <CardHeader style={{textAlign: 'center'}} title={this.state.configName}/>
                 <CardContent style={{height: '75%'}}>
-                  <Stepper nonLinear activeStep={activeStep}>
-                  {steps.map((label, index) => {
-                      return (
-                      <Step key={label}>
-                          <StepButton
-                          onClick={this.handleStep(index)}
-                          completed={this.state.completed[index]}
-                          >
-                          {label}
-                          </StepButton>
-                      </Step>
-                      );
-                  })}
-                  </Stepper>
+                  <div>
+                    <Stepper nonLinear activeStep={activeStep}>
+                    {steps.map((label, index) => {
+                        return (
+                        <Step key={label}>
+                            <StepLabel
+                            error={(index === 0 && this.state.questionConfigError) || (index === 1 && this.state.notificationConfigError)}
+                            onClick={this.handleStep(index)}
+                            completed={this.state.completed[index]}
+                            >
+                            {label}
+                            </StepLabel>
+                        </Step>
+                        );
+                    })}
+                    </Stepper>
+                  </div>
+                  <div style={{overflowY: 'auto', height: '85%'}}>
+                    <div style={{display: activeStep == 0 ? 'block' : 'none', padding: '1rem'}}>
+                      {this.creatQuestions(this.state.numQuestions)}
+                    </div>
+
+                    <div style={{display: activeStep == 1 ? 'block' : 'none', padding: '1rem'}}>
+                      <NotificationDetails validateForm={this.state.validateForm} validationResponse={this.handleNotificationsValidationResponse}/>
+                    </div>
+                  </div>
                 </CardContent>
                 <CardActions style={{flexDirection:'row', justifyContent:'space-between'}}>
                     <Button
                     disabled={activeStep === 0}
                     onClick={this.handleBack}
                     className={classes.button}
+                    variant="contained"
+                    color="primary"
                     >
                     Back
                     </Button>
                     <Button
+                    style={{display: activeStep === 1 ? 'none' : 'block'}}
                     variant="contained"
                     color="primary"
                     onClick={this.handleNext}
                     className={classes.button}
                     >
                     Next
+                    </Button>
+                    <Button
+                    style={{backgroundColor: '#009603', display: activeStep === 1 ? 'block' : 'none'}}
+                    variant="contained"
+                    onClick={this.save}
+                    className={classes.button}
+                    >
+                    Save
                     </Button>
                 </CardActions>
             </Card>

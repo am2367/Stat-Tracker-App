@@ -16,7 +16,10 @@ import Dashboard from './Dashboard.js';
 const styles = theme => ({
   root: {
     flexGrow: 1,
-    height: '100%'
+    height: '100%',
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    display: 'flex'
   },
   Card: {
     padding: theme.spacing.unit * 2,
