@@ -34,20 +34,18 @@ function numberRange (start, end) {
 }
 
 class NotificationDetails extends React.Component {
-  state={notificationType: '',
-         onDays: [],
-         messageTimeType: '',
-         everyHours: 0,
-         everyMinutes: 0,
-         atTime: "",
-         summary: '',
+    constructor(props) {
+        super(props)
+        this.state = Object.assign({},
+        {
          validateForm: this.props.validateForm,
          notificationTypeError: false,
          onDaysError: false,
          atTimeError: false,
          everyHoursMinutesError: false,
          messageTimeTypeError: false,
-         formErrors: false}
+         formErrors: false}, this.props.data)
+    }
 
   componentWillReceiveProps = (nextProps) => {
     this.setState({validateForm: nextProps.validateForm})
@@ -151,12 +149,20 @@ class NotificationDetails extends React.Component {
     }
 
     if(!formErrors){
-        this.props.validationResponse(this.state)
+        this.props.validationResponse({
+                                        notificationType: this.state.notificationType,
+                                        onDays: this.state.onDays,
+                                        messageTimeType: this.state.messageTimeType,
+                                        everyHours: this.state.everyHours,
+                                        everyMinutes: this.state.everyMinutes,
+                                        atTime: this.state.atTime,
+                                        summary: this.state.summary
+                                        })
     }
     else{
         this.props.validationResponse(false)
     }
-    
+
     this.setState({validateForm: false})
   }
 

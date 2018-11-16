@@ -39,18 +39,45 @@ const styles = theme => ({
 
 class Panel extends React.Component {
   state = {active: [], 
-           inactive: ['Productivity', 'Energy', 'Creativity', 'Patience', 'Enthusiasm', 'Anxiety'], 
+           inactive: [], 
            configOpen: false,
-           configName: ''}
+           configName: '',
+           data: {}}
 
   componentWillMount = () => {
     let thisRef = this
     checkSession(function(result){
       if(result === false){
         thisRef.redirect()
+      }else{
+        thisRef.getUserData()
       }
     })
       
+  }
+
+  getUserData = () => {
+    fetch('/api/getUserData')
+    .then(this.handleErrors)
+    .then(response => response.json())
+    .then(data=>{
+        if(data){
+            let configs = data.Configurations
+            let active = []
+            let inactive = []
+            Object.keys(configs).reduce((index, config) => {
+              if(configs[config].active === true){
+                active.push(config)
+              }else{
+                inactive.push(config)
+              }
+            }, [])
+            console.log(active)
+          this.setState({data: data, inactive: inactive, active: active})
+        }else{
+            console.log(data)
+        }
+    })
   }
 
   handleClose = (item) => {
@@ -97,9 +124,16 @@ class Panel extends React.Component {
                         </Grid>
                 </Card>
             </Grid>
-
-            <ConfigModal open={this.state.configOpen} onClose={this.handleClose} configName={this.state.configName}/>
-
+            {Object.keys(this.state.data).length !== 0 && this.state.configName !== ''
+            ?
+            <ConfigModal 
+              open={this.state.configOpen} 
+              data={this.state.data.Configurations[this.state.configName]} 
+              onClose={this.handleClose} 
+              configName={this.state.configName}/>
+              :
+              ''
+            }
         </Grid>
       </Router>  
       )

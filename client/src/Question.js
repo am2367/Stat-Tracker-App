@@ -51,19 +51,17 @@ function numberRange (start, end) {
 }
 
 class Question extends React.Component {
-  state={type: '', 
-         index: this.props.index,
-         question: '',
-         triggersQuestion: false,
-         triggeredByAnswer: '',
-         triggeredByAnswerScale: [],
-         triggeredByAnswerType: this.props.triggeredByAnswerType,
-         questionError: false,
-         typeError: false,
-         triggeredByAnswerScaleError: false,
-         triggeredByAnswerError: false,
-         validateForm: this.props.validateForm
-        }
+    constructor(props) {
+        super(props)
+        this.state = Object.assign({},
+                    {
+                    questionError: false,
+                    typeError: false,
+                    triggeredByAnswerScaleError: false,
+                    triggeredByAnswerError: false,
+                    validateForm: this.props.validateForm
+                    }, this.props.data)
+    }
     
   componentWillReceiveProps = (nextProps) => {
     this.setState({validateForm: nextProps.validateForm})
@@ -165,9 +163,17 @@ class Question extends React.Component {
     }
 
     if(!formErrors){
-        this.props.validationResponse(this.state)
+        this.props.validationResponse(this.state.index, 
+                                                        {
+                                                            type: this.state.type,
+                                                            index: this.state.index,
+                                                            question: this.state.question,
+                                                            triggeredByAnswer: this.state.triggeredByAnswer,
+                                                            triggeredByAnswerScale: this.state.triggeredByAnswerScale,
+                                                            triggeredByAnswerType: this.state.triggeredByAnswerType
+                                                        })
     }else{
-        this.props.validationResponse(false)
+        this.props.validationResponse(this.state.index, false)
     }
     
     this.setState({validateForm: false})
@@ -181,14 +187,14 @@ class Question extends React.Component {
     return (
         <Badge style={{width: '95%'}} classes={{badge: classes.questionBadge}} badgeContent={this.state.index} color="primary">
             <Card style={{marginBottom: '1rem', width: '100%'}}>
-                <div style={{width: '100%', display: this.props.index != 1 ? 'flex' : 'none', marginTop: '1rem'}}>
+                <div style={{width: '100%', display: this.state.index !== 1 ? 'flex' : 'none', marginTop: '1rem'}}>
                     <Grid item  xs={12} sm={12} md={6} lg={6} style={{alignItems: 'center', display: 'flex', paddingLeft: '2rem'}}>
                         <Typography variant="title" color="textPrimary" gutterBottom>
                             Triggered By Question <Badge classes={{badge: classes.triggeredByBadge}} badgeContent={this.state.index - 1} color="primary"/>
                         </Typography>
                     </Grid>
                 </div>
-                <div style={{width: '100%', display: this.props.index != 1 ? 'flex' : 'none', marginTop: '1rem'}}>
+                <div style={{width: '100%', display: this.state.index !== 1 ? 'flex' : 'none', marginTop: '1rem'}}>
                     <Grid item  xs={12} sm={12} md={2} lg={2} style={{alignItems: 'center', display: 'flex', paddingLeft: '2rem'}}>
                         <Typography variant="title" color="textPrimary" gutterBottom>
                             Answer
@@ -206,6 +212,7 @@ class Question extends React.Component {
                     </Grid>
                     <Grid item  xs={12} sm={12} md={10} lg={10}>
                         <TextField
+                                value={this.state.question}
                                 error={this.state.questionError}
                                 style={{width: '100%'}}
                                 id="question" 

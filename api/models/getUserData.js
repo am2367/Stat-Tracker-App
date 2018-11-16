@@ -1,10 +1,5 @@
-var session = require('express-session')
-const bcrypt = require('bcrypt');
-
-const validateCreds = (req, callback) => {
-
+const getUserData = (username,callback) => {
     var MongoClient = require('mongodb').MongoClient;
-
     //Connection details for mLab if environmental variables exist (deployed from cloud)
     if (process.env.mLabUser){
         let dbUsername = process.env.mLabUser;
@@ -16,9 +11,7 @@ const validateCreds = (req, callback) => {
         var url = "mongodb://localhost:27017/stat_tracker";
     }
     MongoClient.connect(url, function(err, db) {
-
-        var query = {Username: req.username}
-
+        
         if (err) throw err;
         console.log("Database Connected!");
         
@@ -29,31 +22,23 @@ const validateCreds = (req, callback) => {
             var dbo = db.db("stat_tracker")
         }
 
-        //Find object for passed username
-        dbo.collection("Users").find(query).toArray(function myFunc(err, result) {
-            if (err) throw err;
+        var query = {Configurations : {'$exists' : 1}, Username: username};
 
-            //if user is found, validate user password
+        dbo.collection("Configs").find(query).toArray(function myFunc(err, result) {
+            if (err) throw err;
             if(result.length){
-                bcrypt.compare(req.password, result[0].Password, function(err, res) {
-                    if(res) {
-                        callback('Correct');
-                    } else {
-                        callback('Incorrect');
-                    } 
-                });
+                callback(result[0]);
+                db.close();
+                return;
             }
             else{
-                callback('Incorrect');
-            }    
-        
+                callback('Empty')
+                db.close();
+                return;
+            }
             db.close();
         });
-
-        
-
-        
     });
 }
 
-module.exports = validateCreds;
+module.exports = getUserData;

@@ -7,6 +7,9 @@ const moment =  require('moment');
 const checkSession = require('../models/checkSession.js');
 const validateFields = require('../models/validateFields.js');
 const sendText = require('../models/sendText.js');
+const updateConfig = require('../models/updateConfig.js');
+const createDefaultConfigs = require('../models/createDefaultConfigs.js');
+const getUserData = require('../models/getUserData.js');
 
 //login
 router.post('/api/login', (req, res) => {
@@ -65,6 +68,16 @@ router.get('/api/sendText', (req, res) => {
     }
 });
 
+//Send text
+router.get('/api/getUserData', (req, res) => {
+    //console.log(req.query)
+    if(checkSession(req)){
+        getUserData(req.session.username, function(result){
+            res.json(result)
+        });
+    }
+});
+
 //register
 router.post('/api/register', (req, res) => {
     console.log(req.body)
@@ -75,6 +88,12 @@ router.post('/api/register', (req, res) => {
             if(result === 'Registered'){
                 req.session.username = req.body.username;
                 req.session.save;
+                
+                createDefaultConfigs(req.session.username, function(result){
+                    if(result === 'Created'){
+                        res.json('Registered')
+                    }
+                })
             }
             else if(result === "Username Taken"){
                 res.json("Username Taken");
@@ -90,6 +109,20 @@ router.post('/api/register', (req, res) => {
     else{
         res.json('Error')
     }
+});
+
+//register
+router.post('/api/updateConfig', (req, res) => {
+    console.log(req.body)
+    updateConfig(req.session.username, req.body, function(result){
+        //console.log(result)
+        if(result === 'Updated'){
+            res.json('Updated')
+        }
+        else{
+            res.json('Error')
+        }
+    })
 });
 
 //if production > serve static files
