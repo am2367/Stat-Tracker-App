@@ -1,33 +1,15 @@
 const bcrypt = require('bcrypt');
+const mongoConnection = require('../models/mongoConnection.js');
 
 const register = (req, callback) => {
-    var MongoClient = require('mongodb').MongoClient;
-    //Connection details for mLab if environmental variables exist (deployed from cloud)
-    if (process.env.mLabUser){
-        let dbUsername = process.env.mLabUser;
-        let dbPassword = process.env.mLabPassword;
-        var url = "mongodb://" + dbUsername + ':' + dbPassword + "@ds119052.mlab.com:19052/stat_tracker";
-    }
-    //Local mongodb url
-    else{
-        var url = "mongodb://localhost:27017/stat_tracker";
-    }
 
-    MongoClient.connect(url, function(err, db) {
-        console.log("Database Connected!");
-        
-        if(process.env.mLabUser){
-            var dbo = db.db("stat_tracker");
-        }
-        else{
-            var dbo = db.db("stat_tracker")
-        }
+    mongoConnection(function(dbo, closeDb){
 
         dbo.collection("Entries").find({Username: req.username}).toArray(function myFunc(err, result) {
             if (err) throw err;
             if(result.length){
                 callback('Username Taken');
-                db.close();
+                closeDb()
                 return;
             }
         });
@@ -36,7 +18,7 @@ const register = (req, callback) => {
             if (err) throw err;
             if(result.length){
                 callback('Email Taken');
-                db.close();
+                closeDb()
                 return;
             }
         });
@@ -49,19 +31,19 @@ const register = (req, callback) => {
                 Email: req.email,
                 Phone: req.phone}
 
-                register(user,dbo, db);
-        });        
-    })
-
-    function register(user, dbo, db){
-        dbo.collection("Users").insertOne(user, function(err, res) {
-            if (err) throw err;
-            console.log("Registered");
+                register(user);
         });
-        db.close();
 
-        callback('Registered')
-    }
+        function register(user){
+            dbo.collection("Users").insertOne(user, function(err, res) {
+                if (err) throw err;
+                console.log("Registered");
+            });
+            callback('Registered')
+            closeDb()
+        }
+        
+    }); 
 }
 
 module.exports = register;

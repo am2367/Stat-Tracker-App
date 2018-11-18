@@ -6,6 +6,7 @@ import CardHeader from '@material-ui/core/CardHeader';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import Modal from '@material-ui/core/Modal';
+import TextField from '@material-ui/core/TextField';
 import Stepper from '@material-ui/core/Stepper';
 import Step from '@material-ui/core/Step';
 import StepButton from '@material-ui/core/StepButton';
@@ -14,6 +15,10 @@ import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import Question from './Question.js';
 import NotificationDetails from './NotificationDetails.js';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormControl from '@material-ui/core/FormControl';
+import Close from '@material-ui/icons/Close';
 
 const styles = theme => ({
   paper: {
@@ -28,6 +33,9 @@ const styles = theme => ({
   instructions: {
     marginTop: theme.spacing.unit,
     marginBottom: theme.spacing.unit,
+  },
+  configNameInput : {
+    fontSize: '1.5rem'
   }
 });
 
@@ -52,12 +60,17 @@ class ConfigModal extends React.Component {
     this.state = Object.assign({},{
             activeStep: 0,
             questionValidations: {},
+            completed: {},
             validateQuestionForm: false,
             validateNotificationForm: false,
             questionConfigError: false,
-            notificationConfigError: false
+            notificationConfigError: false,
+            newConfigName: false,
+            configNameError: false,
+            configNameErrorText: '',
+            sendQuestionData: false,
+            sendNotificationData: false
          }, this.props.data)
-         console.log(this.state)
   }
   
   state = {}
@@ -152,16 +165,41 @@ class ConfigModal extends React.Component {
   creatQuestions = (num) => {
     var questions = [];
     for(let i = 1; i <= num; i++){
-        questions.push(<Question data={this.state.questionData[i]} addQuestion={this.addQuestion} validateForm={this.state.validateQuestionForm} validationResponse={this.handleQuestionsValidationResponse}/>);
+        questions.push(<Question questionData={this.handleQuestionData} sendQuestionData={this.state.sendQuestionData} data={this.state.questionData[i]} addQuestion={this.addQuestion} validateForm={this.state.validateQuestionForm} validationResponse={this.handleQuestionsValidationResponse}/>);
     }
     return questions;
   }
 
   triggerFormValidation = () => {
+    this.checkConfigName()
     this.setState({validateQuestionForm: true, validateNotificationForm: true})
   }
 
+  checkConfigName = () => {
+    let response = this.props.validateNewConfigName(this.state.configName);
+
+    if(response !== true){
+      this.setState({configNameError: true, configNameErrorText: response})
+      return false
+    }else{
+      console.log("Valid new config name")
+      this.setState({configNameError: false})
+      return true
+    }
+  }
+
+  handleConfigNameValidation = () => {
+    if(!this.checkConfigName()){
+      return
+    }
+
+    //trigger event to recieve question and notification data from their states 
+    this.setState({sendQuestionData: true, sendNotificationData: true})
+
+  }
+
   save = () => {
+  
     console.log('Saving!')
 
     fetch('/api/updateConfig', {
@@ -171,15 +209,41 @@ class ConfigModal extends React.Component {
       body: JSON.stringify({configName: this.state.configName,
                             active: this.state.active,
                             numQuestions: this.state.numQuestions,
-                            completed: this.state.completed,
                             triggerAnswerType: this.state.triggerAnswerType,
                             questionData: this.state.questionData,
                             notificationData: this.state.notificationData})
     })
     .then(response => response.json())
     .then(data=>{
-        if(data == 'Saved!'){
-            alert('Saved!')
+        if(data === 'Updated'){
+          alert('Saved!')
+          this.props.refreshData()
+          this.handleClose()
+        }
+    })
+  }
+
+  save = () => {
+  
+    console.log('Activating!')
+
+    fetch('/api/activateConfig', {
+      method: 'post',
+      headers: {
+          'Content-type': 'application/json'},
+      body: JSON.stringify({configName: this.state.configName,
+                            active: this.state.active,
+                            numQuestions: this.state.numQuestions,
+                            triggerAnswerType: this.state.triggerAnswerType,
+                            questionData: this.state.questionData,
+                            notificationData: this.state.notificationData})
+    })
+    .then(response => response.json())
+    .then(data=>{
+        if(data === 'Updated'){
+          alert('Activated!')
+          this.props.refreshData()
+          this.handleClose()
         }
     })
   }
@@ -212,7 +276,13 @@ class ConfigModal extends React.Component {
 
     if(response === false){
       tempCompleted[1] = false
-      this.setState({notificationConfigError: true, validateNotificationForm: false, completed: tempCompleted})
+      this.setState({notificationConfigError: true, validateNotificationForm: false, completed: tempCompleted}, () => {
+                      
+        while(Object.keys(this.state.questionValidations).length !== this.state.numQuestions){
+          continue
+        }
+        this.setState({questionValidations: {}, validateQuestionForm: false})
+      })
     }else{
       tempCompleted[1] = true
       this.setState({completed: tempCompleted, 
@@ -223,10 +293,11 @@ class ConfigModal extends React.Component {
         while(Object.keys(this.state.questionValidations).length !== this.state.numQuestions){
           continue
         }
-        this.setState({questionValidations: {}, validateQuestionForm: false}, () => {
+        this.setState({questionValidations: {}, validateQuestionForm: false, active: this.state.active ? false : true}, () => {
           if(!Object.values(this.state.completed).includes(false) 
           && !this.state.validateQuestionForm 
-          && !this.state.validateNotificationForm){
+          && !this.state.validateNotificationForm
+          && !this.state.configNameError){
           
           //console.log("Validated", this.state)
           this.save();
@@ -235,6 +306,38 @@ class ConfigModal extends React.Component {
       })
     }
   }
+
+  handleQuestionData = (index, data) => {
+    let tempQuestionData = Object.assign(this.state.questionData)
+    let tempQuestionValidations = Object.assign(this.state.questionValidations)
+
+    tempQuestionData[data.index] = data
+    tempQuestionValidations[index] = true
+
+    this.setState({questionData: tempQuestionData,  
+                   questionValidations: tempQuestionValidations})
+  }
+
+  handleNotificationData = (data) => {
+    this.setState({notificationData: data, 
+                  sendNotificationData: false}, () => {
+        
+      while(Object.keys(this.state.questionValidations).length !== this.state.numQuestions){
+        continue
+      }
+      
+      this.setState({questionValidations: {}, sendQuestionData: false}, () => {
+        if(!this.state.configNameError){
+        //console.log("Validated", this.state)
+          this.save();
+        }
+      })
+    })
+  }
+
+  handleConfigNameChange = event => {
+    this.setState({ configName: event.target.value, newConfigName: true});
+  };
 
   render() {
     const { classes } = this.props;
@@ -251,9 +354,32 @@ class ConfigModal extends React.Component {
           open={this.props.open}
           onClose={this.handleClose}
         >
-            <Card style={{textAlign: 'center', backgroundColor: 'white', width: '75%', height: '75%'}}>
-                <CardHeader style={{textAlign: 'center'}} title={this.state.configName}/>
-                <CardContent style={{height: '75%'}}>
+            <Card style={{textAlign: 'center', backgroundColor: 'white', width: '75%', height: '75%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between'}}>
+                <CardContent style={{height: '100%', display: 'flex', padding: 0, flexDirection: 'column', justifyContent: 'space-between'}}>
+                  <div style={{flexDirection: 'row', justifyContent: 'space-between', display: 'flex'}}> 
+                    <Button variant={this.state.active ? 'contained' : 'outlined'} color="primary" style={{margin: '1rem'}} onClick={() => this.triggerFormValidation()}>
+                      {this.state.active ? 'Deactivate' : 'Activate'}
+                    </Button>
+                    <FormControl error={this.state.configNameError}>
+                      <TextField
+                                    value={this.state.configName}
+                                    error={this.state.configNameError}
+                                    margin="normal"
+                                    autoFocus
+                                    InputProps={{
+                                      classes: {
+                                        input: classes.configNameInput
+                                      }
+                                    }}
+                                    id="configName" 
+                                    variant="outlined"
+                                    label="Configuration Name"
+                                    onChange={this.handleConfigNameChange}
+                                    />
+                        <FormHelperText style={{display: this.state.configNameError ? 'block' : 'none'}}>{this.state.configNameErrorText}</FormHelperText>
+                      </FormControl>
+                      <Close style={{width: '2em', height: '2em', fill: 'rgba(0, 0, 0, 0.54)', cursor: 'pointer'}} onClick={this.handleClose}/>
+                    </div>
                   <div>
                     <Stepper nonLinear activeStep={activeStep}>
                     {steps.map((label, index) => {
@@ -263,6 +389,7 @@ class ConfigModal extends React.Component {
                             error={(index === 0 && this.state.questionConfigError) || (index === 1 && this.state.notificationConfigError)}
                             onClick={this.handleStep(index)}
                             completed={this.state.completed[index]}
+                            style={{cursor: 'pointer'}}
                             >
                             {label}
                             </StepLabel>
@@ -277,7 +404,13 @@ class ConfigModal extends React.Component {
                     </div>
 
                     <div style={{display: activeStep == 1 ? 'block' : 'none', padding: '1rem'}}>
-                      <NotificationDetails data={this.state.notificationData} validateForm={this.state.validateNotificationForm} validationResponse={this.handleNotificationsValidationResponse}/>
+                      <NotificationDetails 
+                        notificationData={this.handleNotificationData}
+                        sendNotificationData={this.state.sendNotificationData} 
+                        data={this.state.notificationData} 
+                        validateForm={this.state.validateNotificationForm} 
+                        validationResponse={this.handleNotificationsValidationResponse}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -301,9 +434,9 @@ class ConfigModal extends React.Component {
                     Next
                     </Button>
                     <Button
-                    style={{backgroundColor: '#009603', display: activeStep === 1 ? 'block' : 'none'}}
+                    style={{backgroundColor: '#009603', color: 'white', display: activeStep === 1 ? 'block' : 'none'}}
                     variant="contained"
-                    onClick={this.triggerFormValidation}
+                    onClick={this.handleConfigNameValidation}
                     className={classes.button}
                     >
                     Save

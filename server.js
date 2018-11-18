@@ -22,7 +22,7 @@ else{
 
 var sess = {
   secret: 'keyboard cat',
-  cookie: {maxAge: 300000},
+  cookie: {maxAge: 600000},
   saveUninitialized: false,
   resave: false,
   unset: 'destroy',

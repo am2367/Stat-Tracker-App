@@ -1,25 +1,7 @@
-const updateConfig = (username, data, callback) => {
-    var MongoClient = require('mongodb').MongoClient;
-    //Connection details for mLab if environmental variables exist (deployed from cloud)
-    if (process.env.mLabUser){
-        let dbUsername = process.env.mLabUser;
-        let dbPassword = process.env.mLabPassword;
-        var url = "mongodb://" + dbUsername + ':' + dbPassword + "@ds119052.mlab.com:19052/stat_tracker";
-    }
-    //Local mongodb url
-    else{
-        var url = "mongodb://localhost:27017/stat_tracker";
-    }
+const mongoConnection = require('../models/mongoConnection.js');
 
-    MongoClient.connect(url, function(err, db) {
-        console.log("Database Connected!");
-        
-        if(process.env.mLabUser){
-            var dbo = db.db("stat_tracker");
-        }
-        else{
-            var dbo = db.db("stat_tracker")
-        }
+const updateConfig = (username, data, callback) => {
+    mongoConnection(function(dbo, closeDb){
 
         dbo.collection("Configs").update({Username: username, Configurations: Object},
                                             {$set: 
@@ -27,8 +9,9 @@ const updateConfig = (username, data, callback) => {
                                             {upsert: true})            
 
         callback('Updated')
-        db.close();
-    })
+        closeDb()
+    });
+
 }
 
 module.exports = updateConfig;

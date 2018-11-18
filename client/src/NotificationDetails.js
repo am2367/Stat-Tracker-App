@@ -38,6 +38,7 @@ class NotificationDetails extends React.Component {
         super(props)
         this.state = Object.assign({},
         {
+         sendNotificationData: this.props.sendNotificationData,
          validateForm: this.props.validateForm,
          notificationTypeError: false,
          onDaysError: false,
@@ -48,7 +49,7 @@ class NotificationDetails extends React.Component {
     }
 
   componentWillReceiveProps = (nextProps) => {
-    this.setState({validateForm: nextProps.validateForm})
+    this.setState({validateForm: nextProps.validateForm, sendNotificationData: nextProps.sendNotificationData})
   }
 
   handleTypeChange = event => {
@@ -166,11 +167,24 @@ class NotificationDetails extends React.Component {
     this.setState({validateForm: false})
   }
 
+  sendNotificationData = () => {
+    this.props.notificationData({
+        notificationType: this.state.notificationType,
+        onDays: this.state.onDays,
+        messageTimeType: this.state.messageTimeType,
+        everyHours: this.state.everyHours,
+        everyMinutes: this.state.everyMinutes,
+        atTime: this.state.atTime,
+        summary: this.state.summary
+        })
+  }
+
   render() {
     const { classes } = this.props;
     const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
     {this.state.validateForm ? this.validateNotification() : null} 
+    {this.state.sendNotificationData ? this.sendNotificationData() : null}
 
     return (
         <Card>

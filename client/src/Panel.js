@@ -25,6 +25,13 @@ const styles = theme => ({
   buttons: {
     margin: '0.5rem'
   },
+  inactiveButtons: {
+    margin: '0.5rem'
+  },
+  activeButtons: {
+    margin: '0.5rem',
+    backgroundColor: '#a4ddff'
+  },
   addButton: {
     margin: '0.5rem',
     backgroundColor: '#8dd18d'
@@ -66,13 +73,12 @@ class Panel extends React.Component {
             let active = []
             let inactive = []
             Object.keys(configs).reduce((index, config) => {
-              if(configs[config].active === true){
+              if(configs[config].active === true && configs[config].configName !== 'New Configuration'){
                 active.push(config)
-              }else{
+              }else if(configs[config].configName !== 'New Configuration'){
                 inactive.push(config)
               }
             }, [])
-            console.log(active)
           this.setState({data: data, inactive: inactive, active: active})
         }else{
             console.log(data)
@@ -90,19 +96,35 @@ class Panel extends React.Component {
   }
 
   newConfig = () => {
-    this.setState({configOpen: true, configName: "New Configuration"})
+    this.setState({configOpen: true, configName: 'New Configuration'})
   }
 
   redirect = () => {
     this.props.history.push('/Login');
   }
+
+  validateNewConfigName = (newConfigName) => {
+
+    console.log("New Config Name: " + newConfigName)
+    if(newConfigName === "New Configuration"){
+      return "New Configuration is taken by the system and cannot be used as your configuration name"
+    }
+    else if(Object.keys(this.state.data.Configurations).includes(newConfigName) && this.state.configName !== newConfigName){
+      return "This configuration name is already in use"
+    }
+    else if(newConfigName.trim() === ''){
+      return "Configuration name cannot be empty"
+    }else{
+      return true
+    }
+  }
   
   render(){
     const { classes } = this.props;
 
-    const inactiveButtons = this.state.inactive.map((item) => <Button className={classes.buttons} variant="contained" onClick={() => { this.handleOpen({item}) }}> {item}</Button>)
+    const inactiveButtons = this.state.inactive.map((item) => <Button className={classes.inactiveButtons} variant="contained" onClick={() => { this.handleOpen({item}) }}> {item}</Button>)
     inactiveButtons.push(<Button className={classes.addButton} variant="contained" onClick={() => { this.newConfig() }}><AddIcon /></Button>)
-    const activeButtons = this.state.active.map((item) => <Button className={classes.buttons} variant="contained"  onClick={() => { this.handleOpen({item}) }}>{item}</Button>)
+    const activeButtons = this.state.active.map((item) => <Button className={classes.activeButtons} variant="contained"  onClick={() => { this.handleOpen({item}) }}>{item}</Button>)
 
     return (
       <Router>
@@ -110,7 +132,7 @@ class Panel extends React.Component {
             <Grid item  xs={10} sm={8} md={6} lg={6} style={{height: '100%'}}>
                 <Card style={{height: '100%', width:'100%'}}>
                     <CardHeader style={{textAlign: 'center'}} title="Active"/>
-                    <Grid item  xs={10} sm={10} md={10} lg={10} style={{margin: 'auto', height: '75%'}}>
+                    <Grid item  xs={10} sm={10} md={10} lg={10} style={{margin: 'auto'}}>
                         {activeButtons}
                     </Grid>
                 </Card>
@@ -130,8 +152,11 @@ class Panel extends React.Component {
               open={this.state.configOpen} 
               data={this.state.data.Configurations[this.state.configName]} 
               onClose={this.handleClose} 
-              configName={this.state.configName}/>
-              :
+              configName={this.state.configName}
+              validateNewConfigName={this.validateNewConfigName}
+              refreshData={this.getUserData}
+            />
+            :
               ''
             }
         </Grid>

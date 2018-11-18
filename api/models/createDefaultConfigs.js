@@ -1,7 +1,8 @@
 const updateConfig = require('../models/updateConfig.js');
+const createDefaultConfigObject = require('../models/createDefaultConfigObject.js');
 
 const createDefaultConfigs = (username, callback) => {
-    let configs = ['Productivity', 'Energy', 'Patience']
+    let configs = ['Productivity', 'Energy', 'Patience', 'New']
     let questionData = {
                         1:{
                             type: '',
@@ -23,21 +24,25 @@ const createDefaultConfigs = (username, callback) => {
                             summary: ''
                             }
     
-    configs.forEach(function(config){
-        updateConfig(username, {
-                    configName: config,
-                    active: false,
-                    numQuestions: 1,
-                    completed: {},
-                    triggerAnswerType: '',
-                    questionData: questionData,
-                    notificationData: notificationData}, function(result){
-            console.log(result)
-        }, function(result){
-            console.log(result)
-        })
+    createDefaultConfigObject(username, function(result){
+        if(result === 'Created'){
+            configs.forEach(function(config){
+                updateConfig(username, {
+                            configName: config,
+                            active: false,
+                            numQuestions: 1,
+                            triggerAnswerType: '',
+                            questionData: questionData,
+                            notificationData: notificationData}, function(result){
+                    console.log(result)
+                }, function(result){
+                    console.log(result)
+                })
+            })
+        
+            callback('Created')
+        }
     })
-
-    callback('Created')
+    
 }
 module.exports = createDefaultConfigs;

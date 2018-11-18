@@ -85,7 +85,7 @@ class Dashboard extends React.Component {
     return (
       <Router>
         <div className={classes.root}>
-          <TopNav username={this.state.username}/>
+          <TopNav redirect={this.redirect} username={this.state.username}/>
           <Panel/>
         </div>
       </Router>  

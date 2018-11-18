@@ -111,8 +111,22 @@ router.post('/api/register', (req, res) => {
     }
 });
 
-//register
+//update the configuration
 router.post('/api/updateConfig', (req, res) => {
+    console.log(req.body)
+    updateConfig(req.session.username, req.body, function(result){
+        //console.log(result)
+        if(result === 'Updated'){
+            res.json('Updated')
+        }
+        else{
+            res.json('Error')
+        }
+    })
+});
+
+//activate the configuration
+router.post('/api/activateConfig', (req, res) => {
     console.log(req.body)
     updateConfig(req.session.username, req.body, function(result){
         //console.log(result)

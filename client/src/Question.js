@@ -59,12 +59,13 @@ class Question extends React.Component {
                     typeError: false,
                     triggeredByAnswerScaleError: false,
                     triggeredByAnswerError: false,
-                    validateForm: this.props.validateForm
+                    validateForm: this.props.validateForm,
+                    sendQuestionData: this.props.sendQuestionData
                     }, this.props.data)
     }
     
   componentWillReceiveProps = (nextProps) => {
-    this.setState({validateForm: nextProps.validateForm})
+    this.setState({validateForm: nextProps.validateForm, sendQuestionData: nextProps.sendQuestionData})
   }
 
   handleTypeChange = event => {
@@ -179,10 +180,25 @@ class Question extends React.Component {
     this.setState({validateForm: false})
   }
 
+  sendQuestionData = () => {
+    console.log('Sending question data')
+    this.props.questionData(this.state.index, 
+        {
+            type: this.state.type,
+            index: this.state.index,
+            question: this.state.question,
+            triggeredByAnswer: this.state.triggeredByAnswer,
+            triggeredByAnswerScale: this.state.triggeredByAnswerScale,
+            triggeredByAnswerType: this.state.triggeredByAnswerType
+        })
+    //this.setState({sendQuestionData: false})
+  }
+
   render() {
     const { classes } = this.props;
 
     {this.state.validateForm ? this.validateQuestions() : null}    
+    {this.state.sendQuestionData ? this.sendQuestionData() : null}
 
     return (
         <Badge style={{width: '95%'}} classes={{badge: classes.questionBadge}} badgeContent={this.state.index} color="primary">
