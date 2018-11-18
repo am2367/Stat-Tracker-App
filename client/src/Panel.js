@@ -64,7 +64,7 @@ class Panel extends React.Component {
   }
 
   getUserData = () => {
-    fetch('/api/getUserData')
+    fetch('/api/config/getData')
     .then(this.handleErrors)
     .then(response => response.json())
     .then(data=>{

@@ -68,16 +68,6 @@ router.get('/api/sendText', (req, res) => {
     }
 });
 
-//Send text
-router.get('/api/getUserData', (req, res) => {
-    //console.log(req.query)
-    if(checkSession(req)){
-        getUserData(req.session.username, function(result){
-            res.json(result)
-        });
-    }
-});
-
 //register
 router.post('/api/register', (req, res) => {
     console.log(req.body)
@@ -111,8 +101,19 @@ router.post('/api/register', (req, res) => {
     }
 });
 
+//get user data
+router.get('/api/config/getData', (req, res) => {
+    //console.log(req.query)
+    if(checkSession(req)){
+        getUserData(req.session.username, function(result){
+            res.json(result)
+        });
+    }
+});
+
+
 //update the configuration
-router.post('/api/updateConfig', (req, res) => {
+router.post('/api/config/update', (req, res) => {
     console.log(req.body)
     updateConfig(req.session.username, req.body, function(result){
         //console.log(result)
@@ -126,7 +127,21 @@ router.post('/api/updateConfig', (req, res) => {
 });
 
 //activate the configuration
-router.post('/api/activateConfig', (req, res) => {
+router.post('/api/config/activate', (req, res) => {
+    console.log(req.body)
+    updateConfig(req.session.username, req.body, function(result){
+        //console.log(result)
+        if(result === 'Updated'){
+            res.json('Updated')
+        }
+        else{
+            res.json('Error')
+        }
+    })
+});
+
+//deactivate the configuration
+router.post('/api/config/deactivate', (req, res) => {
     console.log(req.body)
     updateConfig(req.session.username, req.body, function(result){
         //console.log(result)

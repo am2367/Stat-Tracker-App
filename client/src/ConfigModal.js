@@ -202,7 +202,7 @@ class ConfigModal extends React.Component {
   
     console.log('Saving!')
 
-    fetch('/api/updateConfig', {
+    fetch('/api/config/update', {
       method: 'post',
       headers: {
           'Content-type': 'application/json'},
@@ -223,11 +223,11 @@ class ConfigModal extends React.Component {
     })
   }
 
-  save = () => {
+  activate = () => {
   
     console.log('Activating!')
 
-    fetch('/api/activateConfig', {
+    fetch('/api/config/activate', {
       method: 'post',
       headers: {
           'Content-type': 'application/json'},
@@ -242,6 +242,31 @@ class ConfigModal extends React.Component {
     .then(data=>{
         if(data === 'Updated'){
           alert('Activated!')
+          this.props.refreshData()
+          this.handleClose()
+        }
+    })
+  }
+
+  deactivate = () => {
+  
+    console.log('Deactivating!')
+
+    fetch('/api/config/deactivate', {
+      method: 'post',
+      headers: {
+          'Content-type': 'application/json'},
+      body: JSON.stringify({configName: this.state.configName,
+                            active: this.state.active,
+                            numQuestions: this.state.numQuestions,
+                            triggerAnswerType: this.state.triggerAnswerType,
+                            questionData: this.state.questionData,
+                            notificationData: this.state.notificationData})
+    })
+    .then(response => response.json())
+    .then(data=>{
+        if(data === 'Updated'){
+          alert('Deactivated!')
           this.props.refreshData()
           this.handleClose()
         }
@@ -300,7 +325,11 @@ class ConfigModal extends React.Component {
           && !this.state.configNameError){
           
           //console.log("Validated", this.state)
-          this.save();
+          if(this.state.active){
+            this.activate()
+          }else{
+            this.deactivate()
+          }
         }
         })
       })
