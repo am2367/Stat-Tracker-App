@@ -2,7 +2,7 @@ const updateConfig = require('../models/updateConfig.js');
 const createDefaultConfigObject = require('../models/createDefaultConfigObject.js');
 
 const createDefaultConfigs = (username, callback) => {
-    let configs = ['Productivity', 'Energy', 'Patience', 'New']
+    let configs = ['Productivity', 'Energy', 'Patience', 'New Configuration']
     let questionData = {
                         1:{
                             type: '',

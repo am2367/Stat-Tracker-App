@@ -12,7 +12,7 @@ const mongoConnection = (callback) => {
     }
 
     MongoClient.connect(url, function(err, db) {
-        console.log("Database Connected!");
+        //console.log("Database Connected!");
         
         if(process.env.mLabUser){
             var dbo = db.db("stat_tracker");

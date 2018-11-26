@@ -1,23 +1,25 @@
 var twilio = require('twilio');
 const mongoConnection = require('../models/mongoConnection.js');
 
-const sendText = (username, callback) => {
+const sendText = (username, question, callback) => {
     mongoConnection(function(dbo, closeDb){
-    
+        
+        var query = {Username: username}
+
         //Find object for passed username
         dbo.collection("Users").find(query).toArray(function myFunc(err, result) {
             if (err) throw err;
 
-            //if user is found, validate user password
+            //if user is found
             if(result.length){
-                var client = new twilio('AC10bc90ea5265bcadfaac199308b957f0', 'f677a67791c5801d49fa85a23b1d3c15');
-                let phone = '+1' + result[0].Phone.replace(/\D/g,'');
+                var client = new twilio(process.env.twilioSID, process.env.twilioToken);
+                let phone =  result[0].Phone
                 
                 client.messages.create({
                     to: phone,
-                    from: '+15512317496',
-                    body: 'Ahoy from Twilio!'
-                    }).then(message => callback(message.sid))
+                    from: process.env.twilioNumber,
+                    body: question
+                    }).then(message => callback('Question ' + question + ' sent to ' + username + ' by text at #' + phone + " at " + new Date()))
                     .done();
                 
             }

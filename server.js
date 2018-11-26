@@ -4,9 +4,14 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
 const uuidv4 = require('uuid/v4');
 const router = express.Router();
+var dotenv = require('dotenv');
 var cors = require('cors');
 const app = express();
 const port = process.env.PORT || 4200;
+const restartJobs = require('./api/models/restartJobs.js');
+
+dotenv.load();
+
 app.use(express.static(`${__dirname}/client/build`));
 app.use(bodyParser.urlencoded({ extended: false }))
 
@@ -57,3 +62,8 @@ app.use('/', routes);
 app.listen(port);
 
 console.log('API server started on: ' + port);
+
+//Restart all jobs in the database
+restartJobs(function(response){
+  console.log(response)
+})

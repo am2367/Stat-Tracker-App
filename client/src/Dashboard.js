@@ -5,7 +5,11 @@ import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 import { withRouter } from 'react-router-dom';
 import checkSession from './CheckSession.js';
 import TopNav from "./TopNav.js";
-import Panel from "./Panel.js";
+import Configurations from "./Configurations.js";
+import Analytics from "./Analytics.js";
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
+import Typography from '@material-ui/core/Typography';
 
 const styles = theme => ({
   root: {
@@ -31,21 +35,46 @@ const styles = theme => ({
   }
 });
 
+
+function TabContainer(props) {
+  return (
+    <Typography component="div" style={{ padding: 8 * 3 }}>
+      {props.children}
+    </Typography>
+  );
+}
+
+TabContainer.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
 class Dashboard extends React.Component {
-  state = {loggedIn: false, data: {}}
+  state = {loggedIn: false, data: {}, value: 0}
 
   componentWillMount = () => {
     let thisRef = this
     checkSession(function(result){
       if(result === false){
         thisRef.redirect()
-      }
-      else{
-          thisRef.getUsername();
-          //thisRef.sendText();
+      }else{
+        thisRef.getUsername();
+        thisRef.getUserData()
       }
     })
       
+  }
+
+  getUserData = () => {
+    fetch('/api/config/getData')
+    .then(this.handleErrors)
+    .then(response => response.json())
+    .then(data=>{
+        if(data){
+          this.setState({data: data})
+        }else{
+            console.log(data)
+        }
+    })
   }
 
   sendText = () => {
@@ -72,7 +101,9 @@ class Dashboard extends React.Component {
     })
   }
 
-  
+  handleTabChange = (event, value) => {
+    this.setState({ value });
+  };
 
 
   redirect = () => {
@@ -86,7 +117,18 @@ class Dashboard extends React.Component {
       <Router>
         <div className={classes.root}>
           <TopNav redirect={this.redirect} username={this.state.username}/>
-          <Panel/>
+          <Tabs
+            value={this.state.value}
+            onChange={this.handleTabChange}
+            indicatorColor="primary"
+            textColor="primary"
+            fullWidth
+          >
+            <Tab label="Analytics" />
+            <Tab label="Configurations" />
+          </Tabs>
+          <Analytics hidden={this.state.value === 1}/>
+          <Configurations hidden={this.state.value === 0} getUserData={this.getUserData} data={this.state.data}/>
         </div>
       </Router>  
       )

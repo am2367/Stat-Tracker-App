@@ -23,6 +23,7 @@ import Badge from '@material-ui/core/Badge';
 import Select from '@material-ui/core/Select';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
 import MenuItem from '@material-ui/core/MenuItem';
+import Close from '@material-ui/icons/Close';
 
 const styles = theme => ({
     questionBadge: {
@@ -65,7 +66,9 @@ class Question extends React.Component {
     }
     
   componentWillReceiveProps = (nextProps) => {
-    this.setState({validateForm: nextProps.validateForm, sendQuestionData: nextProps.sendQuestionData})
+    this.setState({validateForm: nextProps.validateForm, 
+                   sendQuestionData: nextProps.sendQuestionData
+                  })
   }
 
   handleTypeChange = event => {
@@ -77,8 +80,12 @@ class Question extends React.Component {
   };
 
   addQuestion = () => {
-      this.props.addQuestion(this.state.type);
-      this.setState({triggersQuestion: true})
+    this.props.addQuestion(this.state.type);
+    this.setState({triggersQuestion: true})
+  }
+
+  deleteQuestion = () => {
+    this.props.deleteQuestion(this.state.index);
   }
 
   handleChangeTriggeredByAnswer = event => {
@@ -147,7 +154,7 @@ class Question extends React.Component {
         formErrors = true
     }
 
-    if(this.state.type === ''){
+    if(this.state.type === '' && this.state.index === 1){
         this.setState({typeError: true})
         formErrors = true
     }
@@ -169,6 +176,7 @@ class Question extends React.Component {
                                                             type: this.state.type,
                                                             index: this.state.index,
                                                             question: this.state.question,
+                                                            triggersQuestion: this.state.triggersQuestion,
                                                             triggeredByAnswer: this.state.triggeredByAnswer,
                                                             triggeredByAnswerScale: this.state.triggeredByAnswerScale,
                                                             triggeredByAnswerType: this.state.triggeredByAnswerType
@@ -187,6 +195,7 @@ class Question extends React.Component {
             type: this.state.type,
             index: this.state.index,
             question: this.state.question,
+            triggersQuestion: this.state.triggersQuestion,
             triggeredByAnswer: this.state.triggeredByAnswer,
             triggeredByAnswerScale: this.state.triggeredByAnswerScale,
             triggeredByAnswerType: this.state.triggeredByAnswerType
@@ -202,12 +211,16 @@ class Question extends React.Component {
 
     return (
         <Badge style={{width: '95%'}} classes={{badge: classes.questionBadge}} badgeContent={this.state.index} color="primary">
-            <Card style={{marginBottom: '1rem', width: '100%'}}>
+            <Card style={{marginBottom: '1rem', width: '100%'}}> 
                 <div style={{width: '100%', display: this.state.index !== 1 ? 'flex' : 'none', marginTop: '1rem'}}>
-                    <Grid item  xs={12} sm={12} md={6} lg={6} style={{alignItems: 'center', display: 'flex', paddingLeft: '2rem'}}>
+                    <Grid item  xs={12} sm={12} md={12} lg={12} style={{alignItems: 'center', display: 'flex', paddingLeft: '2rem', justifyContent: 'space-between'}}>
                         <Typography variant="title" color="textPrimary" gutterBottom>
                             Triggered By Question <Badge classes={{badge: classes.triggeredByBadge}} badgeContent={this.state.index - 1} color="primary"/>
                         </Typography>
+                        <Close 
+                            style={{marginRight: '1rem', width: '1em', height: '1em', fill: 'white', backgroundColor: 'red', borderRadius: '25%', cursor: 'pointer'}}
+                            onClick={this.deleteQuestion}
+                            />
                     </Grid>
                 </div>
                 <div style={{width: '100%', display: this.state.index !== 1 ? 'flex' : 'none', marginTop: '1rem'}}>
@@ -220,13 +233,13 @@ class Question extends React.Component {
                             {this.state.triggeredByAnswerType !== '' ? this.getAnswerOption() : ''}
                     </Grid>
                 </div>
-                <div style={{width: '100%', display: 'flex', marginTop: '1rem'}}>
+                <div style={{width: '100%', display: 'flex', marginTop: '1rem', marginBottom: '1rem'}}>
                     <Grid item  xs={12} sm={12} md={2} lg={2} style={{alignItems: 'center', display: 'flex', paddingLeft: '2rem'}}>
                         <Typography variant="title" color="textPrimary" gutterBottom>
                             Question
                         </Typography>
                     </Grid>
-                    <Grid item  xs={12} sm={12} md={10} lg={10}>
+                    <Grid item  xs={12} sm={12} md={8} lg={8}>
                         <TextField
                                 value={this.state.question}
                                 error={this.state.questionError}
@@ -239,14 +252,14 @@ class Question extends React.Component {
                     </Grid>
                 </div>
 
-                <div style={{width: '100%', display: 'flex'}}>
+                <div style={{width: '100%', display: this.state.index > 1 ? 'none' : 'flex'}}>
                     <Grid item  xs={12} sm={12} md={2} lg={2} style={{alignItems: 'center', display: 'flex', paddingLeft: '2rem'}}>
                         <Typography variant="title" color="textPrimary" gutterBottom>
                             Type
                         </Typography>
                     </Grid>
-                    <Grid item  xs={12} sm={12} md={10} lg={10}>
-                        <FormControl error={this.state.typeError}>
+                    <Grid item  xs={12} sm={12} md={9} lg={9}>
+                        <FormControl error={this.state.typeError} style={{width: '100%'}}>
                             <RadioGroup
                                 name="type"
                                 value={this.state.type}
@@ -266,7 +279,7 @@ class Question extends React.Component {
                     </Grid>
                 </div>
 
-                <div style={{width: '100%', marginBottom: '1rem', display: this.state.triggersQuestion ? 'none' : 'block'}}>
+                <div style={{width: '100%', marginBottom: '1rem', display: (this.state.triggersQuestion || this.state.index > 1) ? 'none' : 'block'}}>
                     <Button disabled={this.state.type === '' || this.state.question === ''} variant="contained" color="primary" onClick={this.addQuestion}>
                         Trigger Another Question
                     </Button>

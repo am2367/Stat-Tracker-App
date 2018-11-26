@@ -144,7 +144,7 @@ class NotificationDetails extends React.Component {
     }else if(this.state.messageTimeType === 'At' && this.state.atTime === ""){
         this.setState({atTimeError: true, formErrors: true})
         formErrors = true
-    }else if(this.state.messageTimeType === 'Every' && (this.state.everyHours === 0 || this.state.everyMinutes === 0)){
+    }else if(this.state.messageTimeType === 'Every' && (this.state.everyHours === 0 && this.state.everyMinutes === 0)){
         this.setState({everyHoursMinutesError: true, formErrors: true})
         formErrors = true
     }

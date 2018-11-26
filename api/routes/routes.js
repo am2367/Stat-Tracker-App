@@ -7,9 +7,16 @@ const moment =  require('moment');
 const checkSession = require('../models/checkSession.js');
 const validateFields = require('../models/validateFields.js');
 const sendText = require('../models/sendText.js');
+const handleTextReply = require('../models/handleTextReply.js');
 const updateConfig = require('../models/updateConfig.js');
 const createDefaultConfigs = require('../models/createDefaultConfigs.js');
 const getUserData = require('../models/getUserData.js');
+const getResponseData = require('../models/getResponseData.js');
+const getResponseDates = require('../models/getResponseDates.js');
+const createNotificationSchedule = require('../models/createNotificationSchedule.js');
+const cancelNotificationSchedule = require('../models/cancelNotificationSchedule.js');
+var schedule = require('node-schedule');
+const deleteConfiguration = require('../models/deleteConfiguration.js');
 
 //login
 router.post('/api/login', (req, res) => {
@@ -68,6 +75,15 @@ router.get('/api/sendText', (req, res) => {
     }
 });
 
+//Handle text reply
+router.post('/api/handleTextReply', (req, res) => {
+    //console.log(req.body)
+    handleTextReply(req.body, function(result){
+        console.log(result)
+    });
+
+});
+
 //register
 router.post('/api/register', (req, res) => {
     console.log(req.body)
@@ -101,6 +117,21 @@ router.post('/api/register', (req, res) => {
     }
 });
 
+//get next notification time
+router.get('/api/config/getNextNotificationTime', (req, res) => {
+    if(checkSession(req)){
+        const jobName = req.session.username + "_" + req.query.configName
+        
+        try{
+            var my_job = schedule.scheduledJobs[jobName];
+            res.json(my_job.nextInvocation());
+        }
+        catch(err){
+            res.json('Error')
+        }
+    }
+});
+
 //get user data
 router.get('/api/config/getData', (req, res) => {
     //console.log(req.query)
@@ -111,47 +142,95 @@ router.get('/api/config/getData', (req, res) => {
     }
 });
 
+//Delete configuration
+router.get('/api/config/delete', (req, res) => {
+    console.log(req.query)
+    if(checkSession(req)){
+        deleteConfiguration(req.session.username, req.query.configName, function(result){
+            //console.log(result)
+            if(result === 'Deleted'){
+                cancelNotificationSchedule(req.session.username, req.query, function(result){
+                    res.json('Deleted')
+                })
+            }
+            else{
+                res.json('Error')
+            }
+        })
+    }
+});
+
+
+//Get response data
+router.get('/api/responses/getData', (req, res) => {
+    console.log(req.query)
+    if(checkSession(req)){
+        getResponseData(req.session.username, req.query, function(result){
+            res.json(result)
+        });
+    }
+});
+
+//Get response dates
+router.get('/api/responses/getDates', (req, res) => {
+    //console.log(req.query)
+    if(checkSession(req)){
+        getResponseDates(req.session.username, function(result){
+            res.json(result)
+        });
+    }
+});
 
 //update the configuration
 router.post('/api/config/update', (req, res) => {
     console.log(req.body)
-    updateConfig(req.session.username, req.body, function(result){
-        //console.log(result)
-        if(result === 'Updated'){
-            res.json('Updated')
-        }
-        else{
-            res.json('Error')
-        }
-    })
+    if(checkSession(req)){
+        updateConfig(req.session.username, req.body, function(result){
+            //console.log(result)
+            if(result === 'Updated'){
+                res.json('Updated')
+            }
+            else{
+                res.json('Error')
+            }
+        })
+    }
 });
 
 //activate the configuration
 router.post('/api/config/activate', (req, res) => {
     console.log(req.body)
-    updateConfig(req.session.username, req.body, function(result){
-        //console.log(result)
-        if(result === 'Updated'){
-            res.json('Updated')
-        }
-        else{
-            res.json('Error')
-        }
-    })
+    if(checkSession(req)){
+        updateConfig(req.session.username, req.body, function(result){
+            //console.log(result)
+            if(result === 'Updated'){
+                createNotificationSchedule(req.session.username, req.body, function(result){
+                    res.json(result)
+                })
+            }
+            else{
+                res.json('Error')
+            }
+        })
+    }
 });
 
 //deactivate the configuration
 router.post('/api/config/deactivate', (req, res) => {
     console.log(req.body)
-    updateConfig(req.session.username, req.body, function(result){
-        //console.log(result)
-        if(result === 'Updated'){
-            res.json('Updated')
-        }
-        else{
-            res.json('Error')
-        }
-    })
+    if(checkSession(req)){
+        updateConfig(req.session.username, req.body, function(result){
+            //console.log(result)
+            if(result === 'Updated'){
+                cancelNotificationSchedule(req.session.username, req.body, function(result){
+                    res.json('Updated')
+                })
+            }
+            else{
+                res.json('Error')
+            }
+        })
+    }
 });
 
 //if production > serve static files

@@ -180,12 +180,15 @@ class Register extends React.Component {
         if(this.state.phone.replace(/\s/g,'').length !== 13){
             this.setState({phoneError: true})
             error = true;
+        }else{
+            var phone = Object.assign(this.state.phone)
+            phone = '+1' + phone.replace(/\D/g,'');
         }
 
         var data = {firstName: this.state.firstName,
                     lastName: this.state.lastName,
                     email: this.state.email,
-                    phone: this.state.phone,
+                    phone: phone,
                     username: this.state.username,
                     password: this.state.password};
         if(error){

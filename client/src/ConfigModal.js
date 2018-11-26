@@ -19,6 +19,16 @@ import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import Close from '@material-ui/icons/Close';
+import checkSession from './CheckSession.js';
+import { withRouter } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Link } from "react-router-dom";
+import moment from 'moment';
+import Grid from '@material-ui/core/Grid';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 const styles = theme => ({
   paper: {
@@ -57,7 +67,9 @@ switch (step) {
 class ConfigModal extends React.Component {
   constructor(props) {
     super(props)
+
     this.state = Object.assign({},{
+            confirmDeleteWindow: false,
             activeStep: 0,
             questionValidations: {},
             completed: {},
@@ -69,7 +81,8 @@ class ConfigModal extends React.Component {
             configNameError: false,
             configNameErrorText: '',
             sendQuestionData: false,
-            sendNotificationData: false
+            sendNotificationData: false,
+            nextNotification: ''
          }, this.props.data)
   }
   
@@ -78,6 +91,19 @@ class ConfigModal extends React.Component {
   handleClose = () => {
     this.props.onClose();
   };
+
+  componentWillMount = () => {
+    let thisRef = this
+    checkSession(function(result){
+      if(result === false){
+        thisRef.redirect()
+      }else{
+        if(thisRef.props.data.active){
+          thisRef.getNextNotificationTime()
+        }
+      }
+    })
+  }
 
   componentWillReceiveProps = (nextProps) => {
       this.setState({configName: nextProps.configName})
@@ -165,14 +191,49 @@ class ConfigModal extends React.Component {
   creatQuestions = (num) => {
     var questions = [];
     for(let i = 1; i <= num; i++){
-        questions.push(<Question questionData={this.handleQuestionData} sendQuestionData={this.state.sendQuestionData} data={this.state.questionData[i]} addQuestion={this.addQuestion} validateForm={this.state.validateQuestionForm} validationResponse={this.handleQuestionsValidationResponse}/>);
+        questions.push(<Question 
+                          deleteQuestion={this.deleteQuestion}
+                          questionData={this.handleQuestionData} 
+                          sendQuestionData={this.state.sendQuestionData} 
+                          data={this.state.questionData[i]} 
+                          addQuestion={this.addQuestion} 
+                          validateForm={this.state.validateQuestionForm} 
+                          validationResponse={this.handleQuestionsValidationResponse}/>);
     }
     return questions;
   }
 
+  deleteQuestion = (index) => {
+    let tempQuestions = Object.assign(this.state.questionData)
+    let tempNumQuestions = Object.assign(this.state.numQuestions)
+    
+    tempNumQuestions -= 1
+    tempQuestions[index-1].triggersQuestion === false
+    delete tempQuestions[index]
+    
+    this.setState({questionData: tempQuestions, numQuestions: tempNumQuestions})
+  }
+
+  deleteConfiguration = () => {
+    this.setState({confirmDeleteWindow: false})
+    this.props.deleteConfiguration(this.state.configName)
+    this.handleClose()
+  }
+
+  openConfirmDeleteWindow = () => {
+    this.setState({confirmDeleteWindow: true})
+  }
+
   triggerFormValidation = () => {
-    this.checkConfigName()
-    this.setState({validateQuestionForm: true, validateNotificationForm: true})
+    let thisRef = this
+    checkSession(function(result){
+      if(result === false){
+        thisRef.redirect()
+      }else{
+        thisRef.checkConfigName()
+        thisRef.setState({validateQuestionForm: true, validateNotificationForm: true})
+      }
+    })
   }
 
   checkConfigName = () => {
@@ -189,13 +250,23 @@ class ConfigModal extends React.Component {
   }
 
   handleConfigNameValidation = () => {
-    if(!this.checkConfigName()){
-      return
-    }
+    let thisRef = this
+    checkSession(function(result){
+      if(result === false){
+        thisRef.redirect()
+      }else{
+        if(!thisRef.checkConfigName()){
+          return
+        }
 
-    //trigger event to recieve question and notification data from their states 
-    this.setState({sendQuestionData: true, sendNotificationData: true})
+        //trigger event to recieve question and notification data from their states 
+        thisRef.setState({sendQuestionData: true, sendNotificationData: true})
+      }
+    })
+  }
 
+  handleCloseConfirmDeleteWindow = () => {
+    this.setState({confirmDeleteWindow: false})
   }
 
   save = () => {
@@ -240,8 +311,8 @@ class ConfigModal extends React.Component {
     })
     .then(response => response.json())
     .then(data=>{
-        if(data === 'Updated'){
-          alert('Activated!')
+        if(data !== 'Error'){
+          alert(data)
           this.props.refreshData()
           this.handleClose()
         }
@@ -364,9 +435,25 @@ class ConfigModal extends React.Component {
     })
   }
 
+  getNextNotificationTime = () => {
+    fetch('/api/config/getNextNotificationTime?configName=' + this.state.configName)
+    .then(this.handleErrors)
+    .then(response => response.json())
+    .then(data=>{
+      if(data !== 'Error'){
+        let datetime = moment(data).format('LLLL')
+        this.setState({nextNotification: datetime})
+      }
+    })
+  }
+
   handleConfigNameChange = event => {
     this.setState({ configName: event.target.value, newConfigName: true});
   };
+
+  redirect = () => {
+    this.props.history.push('/Login');
+  }
 
   render() {
     const { classes } = this.props;
@@ -374,6 +461,8 @@ class ConfigModal extends React.Component {
     const { activeStep, questionList } = this.state;    
 
     return (
+      <Router> 
+
       <div>
         
         <Modal
@@ -386,28 +475,37 @@ class ConfigModal extends React.Component {
             <Card style={{textAlign: 'center', backgroundColor: 'white', width: '75%', height: '75%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between'}}>
                 <CardContent style={{height: '100%', display: 'flex', padding: 0, flexDirection: 'column', justifyContent: 'space-between'}}>
                   <div style={{flexDirection: 'row', justifyContent: 'space-between', display: 'flex'}}> 
-                    <Button variant={this.state.active ? 'contained' : 'outlined'} color="primary" style={{margin: '1rem'}} onClick={() => this.triggerFormValidation()}>
-                      {this.state.active ? 'Deactivate' : 'Activate'}
-                    </Button>
-                    <FormControl error={this.state.configNameError}>
-                      <TextField
-                                    value={this.state.configName}
-                                    error={this.state.configNameError}
-                                    margin="normal"
-                                    autoFocus
-                                    InputProps={{
-                                      classes: {
-                                        input: classes.configNameInput
-                                      }
-                                    }}
-                                    id="configName" 
-                                    variant="outlined"
-                                    label="Configuration Name"
-                                    onChange={this.handleConfigNameChange}
-                                    />
-                        <FormHelperText style={{display: this.state.configNameError ? 'block' : 'none'}}>{this.state.configNameErrorText}</FormHelperText>
-                      </FormControl>
-                      <Close style={{width: '2em', height: '2em', fill: 'rgba(0, 0, 0, 0.54)', cursor: 'pointer'}} onClick={this.handleClose}/>
+                    <Grid item  xs={3} sm={3} md={3} lg={3} style={{textAlign: 'start'}}>
+                      <Button variant={this.state.active ? 'contained' : 'outlined'} color="primary" style={{margin: '1rem'}} onClick={() => this.triggerFormValidation()}>
+                        {this.state.active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                      <Button variant={'outlined'} color='secondary' style={{margin: '1rem'}} onClick={() => this.openConfirmDeleteWindow()}>
+                        Delete
+                      </Button>
+                    </Grid>
+                    <Grid item  xs={6} sm={6} md={6} lg={6}>
+                      <FormControl error={this.state.configNameError}>
+                        <TextField
+                                      value={this.state.configName}
+                                      error={this.state.configNameError}
+                                      margin="normal"
+                                      autoFocus
+                                      InputProps={{
+                                        classes: {
+                                          input: classes.configNameInput
+                                        }
+                                      }}
+                                      id="configName" 
+                                      variant="outlined"
+                                      label="Configuration Name"
+                                      onChange={this.handleConfigNameChange}
+                                      />
+                          <FormHelperText style={{display: this.state.configNameError ? 'block' : 'none'}}>{this.state.configNameErrorText}</FormHelperText>
+                        </FormControl>
+                      </Grid>
+                      <Grid item  xs={3} sm={3} md={3} lg={3} style={{textAlign: 'end'}}>
+                        <Close style={{width: '2em', height: '2em', fill: 'rgba(0, 0, 0, 0.54)', cursor: 'pointer'}} onClick={this.handleClose}/>
+                      </Grid>
                     </div>
                   <div>
                     <Stepper nonLinear activeStep={activeStep}>
@@ -452,7 +550,10 @@ class ConfigModal extends React.Component {
                     color="primary"
                     >
                     Back
-                    </Button>
+                    </Button>                    
+                    <Typography variant="title" color="textPrimary" gutterBottom>
+                      {this.state.active ? 'Next notification: ' + this.state.nextNotification : ''}
+                    </Typography>
                     <Button
                     style={{display: activeStep === 1 ? 'none' : 'block'}}
                     variant="contained"
@@ -473,11 +574,33 @@ class ConfigModal extends React.Component {
                 </CardActions>
             </Card>
         </Modal>
+        <Dialog
+            open={this.state.confirmDeleteWindow}
+            onClose={this.handleCloseConfirmDeleteWindow}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">{"Delete Configuration?"}</DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Are you sure you want to delete this configuration?
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleCloseConfirmDeleteWindow} color="primary">
+                Cancel
+              </Button>
+              <Button variant='contained' color='secondary' onClick={this.deleteConfiguration}  autoFocus>
+                Yes
+              </Button>
+            </DialogActions>
+          </Dialog>
       </div>
+      </Router> 
     );
   }
 }
 
 const ConfigModalWrapped = withStyles(styles)(ConfigModal);
-
-export default ConfigModalWrapped;
+const ConfigModalWrappeddWithRouter = withRouter(ConfigModalWrapped)
+export default ConfigModalWrappeddWithRouter;
