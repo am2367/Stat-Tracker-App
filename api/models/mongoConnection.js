@@ -6,6 +6,9 @@ const mongoConnection = (callback) => {
         let dbPassword = process.env.mLabPassword;
         var url = "mongodb://" + dbUsername + ':' + dbPassword + "@ds137197.mlab.com:37197/stat_tracker";
     }
+    else if(process.env.MONGODB_URI){
+        var url = process.env.MONGODB_URI;
+    }
     //Local mongodb url
     else{
         var url = "mongodb://localhost:27017/stat_tracker";
@@ -13,17 +16,22 @@ const mongoConnection = (callback) => {
 
     MongoClient.connect(url, function(err, db) {
         //console.log("Database Connected!");
-        
-        if(process.env.mLabUser){
-            var dbo = db.db("stat_tracker");
+        if(err)
+        {
+            console.log(err);
         }
         else{
-            var dbo = db.db("stat_tracker")
-        }
+            if(process.env.mLabUser){
+                var dbo = db.db("stat_tracker");
+            }
+            else{
+                var dbo = db.db("stat_tracker")
+            }
 
-        callback((dbo), function(){
-            db.close();
-        })
+            callback((dbo), function(){
+                db.close();
+            })
+        }
     })
 
 }
