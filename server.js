@@ -20,6 +20,9 @@ if (process.env.mLabUser){
   let dbPassword = process.env.mLabPassword;
   var url = "mongodb://" + dbUsername + ':' + dbPassword + "@ds119052.mlab.com:19052/mydb";
 }
+else if(process.env.MONGODB_URI){
+  var url = process.env.MONGODB_URI;
+}
 //Local mongodb url
 else{
   var url = "mongodb://localhost:27017/myapp";
