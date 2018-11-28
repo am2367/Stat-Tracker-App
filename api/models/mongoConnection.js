@@ -24,6 +24,9 @@ const mongoConnection = (callback) => {
             if(process.env.mLabUser){
                 var dbo = db.db("stat_tracker");
             }
+            else if(process.env.MONGODB_URI){
+                var dbo = db.db("heroku_rdx1d6t2");
+            }
             else{
                 var dbo = db.db("stat_tracker")
             }
