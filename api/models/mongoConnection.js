@@ -4,7 +4,7 @@ const mongoConnection = (callback) => {
     if (process.env.mLabUser){
         let dbUsername = process.env.mLabUser;
         let dbPassword = process.env.mLabPassword;
-        var url = "mongodb://" + dbUsername + ':' + dbPassword + "@ds119052.mlab.com:19052/stat_tracker";
+        var url = "mongodb://" + dbUsername + ':' + dbPassword + "@ds137197.mlab.com:37197/stat_tracker";
     }
     //Local mongodb url
     else{
